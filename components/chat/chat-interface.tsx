@@ -132,7 +132,7 @@ export function ChatInterface({ currentUserId, initialConversations, initialConv
               return [...prev, newMsg]
             })
             scrollToBottom()
-            
+
             // Mark as read if from other participant
             if (newMsg.sender_id === otherParticipant?.id) {
               supabase
@@ -205,7 +205,7 @@ export function ChatInterface({ currentUserId, initialConversations, initialConv
           .from("chat_conversations")
           .update({ last_message_at: new Date().toISOString() })
           .eq("id", selectedConversation)
-        
+
         // Update local conversations list
         setConversations((prev) =>
           prev.map((conv) =>
@@ -218,6 +218,22 @@ export function ChatInterface({ currentUserId, initialConversations, initialConv
     } catch (error) {
       console.error("Error sending message:", error)
       alert("Failed to send message. Please try again.")
+    }
+  }
+
+  const deleteMessage = async (messageId: string) => {
+    try {
+      const response = await fetch(`/api/chat/messages/${messageId}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) throw new Error("Failed to delete message")
+
+      // ลบออกจาก state ทันที
+      setMessages((prev) => prev.filter((m) => m.id !== messageId))
+    } catch (error) {
+      console.error("Error deleting message:", error)
+      alert("Failed to delete message. Please try again.")
     }
   }
 
@@ -289,9 +305,8 @@ export function ChatInterface({ currentUserId, initialConversations, initialConv
                 <button
                   key={conv.id}
                   onClick={() => setSelectedConversation(conv.id)}
-                  className={`w-full p-4 flex items-start gap-3 hover:bg-muted transition-colors ${
-                    selectedConversation === conv.id ? "bg-muted" : ""
-                  }`}
+                  className={`w-full p-4 flex items-start gap-3 hover:bg-muted transition-colors ${selectedConversation === conv.id ? "bg-muted" : ""
+                    }`}
                 >
                   <Avatar>
                     <AvatarImage src={participant?.avatar_url || "/placeholder.svg"} />
@@ -335,9 +350,8 @@ export function ChatInterface({ currentUserId, initialConversations, initialConv
                       setSelectedConversation(conv.id)
                       setMobileConversationsOpen(false)
                     }}
-                    className={`w-full p-4 flex items-start gap-3 hover:bg-muted transition-colors ${
-                      selectedConversation === conv.id ? "bg-muted" : ""
-                    }`}
+                    className={`w-full p-4 flex items-start gap-3 hover:bg-muted transition-colors ${selectedConversation === conv.id ? "bg-muted" : ""
+                      }`}
                   >
                     <Avatar>
                       <AvatarImage src={participant?.avatar_url || "/placeholder.svg"} />
@@ -394,11 +408,18 @@ export function ChatInterface({ currentUserId, initialConversations, initialConv
                       return (
                         <div key={msg.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
                           <div
-                            className={`max-w-[85%] md:max-w-[70%] rounded-lg p-3 ${
-                              isOwn ? "bg-[#A07850] text-white" : "bg-[#F5EDE2] border border-[#D4B896]"
-                            }`}
+                            className={`max-w-[85%] md:max-w-[70%] rounded-lg p-3 ${isOwn ? "bg-[#A07850] text-white" : "bg-[#F5EDE2] border border-[#D4B896]"
+                              }`}
                           >
                             <p className="text-sm break-words">{msg.message}</p>
+                            {isOwn && (
+                              <button
+                                onClick={() => deleteMessage(msg.id)}
+                                className="text-xs mt-1 text-white/50 hover:text-white/90"
+                              >
+                                ลบ
+                              </button>
+                            )}
                             <p
                               className={`text-xs mt-1 ${isOwn ? "text-white/70" : "text-[#6B4C30]"}`}
                             >
