@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -15,7 +15,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const messageId = params.id
+    const { id: messageId } = await params
 
     // ตรวจสอบว่าเป็นเจ้าของข้อความหรือไม่
     const { data: message, error: fetchError } = await supabase
