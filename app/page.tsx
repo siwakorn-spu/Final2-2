@@ -15,12 +15,14 @@ export default function HomePage() {
   })
 
   // Start with normal scale, mask image scales up up to 4x to create immersive zoom
-  const imageScale = useTransform(scrollYProgress, [0, 1], [1, 5])
-  const imageOpacity = useTransform(scrollYProgress, [0, 0.8, 1], [1, 1, 0])
+  const imageScale = useTransform(scrollYProgress, [0, 0.7], [1, 5])
+  const imageOpacity = useTransform(scrollYProgress, [0, 0.8, 1], [1, 1, 0.5])
   
-  // Fade out text and raise it slightly as we zoom into the image
-  const textOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0])
-  const textY = useTransform(scrollYProgress, [0, 0.4], [0, -50])
+  // Text and actions appear AFTER zooming in
+  const textOpacity = useTransform(scrollYProgress, [0.7, 1], [0, 1])
+  const textY = useTransform(scrollYProgress, [0.7, 1], [50, 0])
+  const actionPointerEvents = useTransform(scrollYProgress, v => v > 0.8 ? "auto" : "none")
+  const scrollOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
 
   return (
     <div ref={containerRef} className="relative w-full h-[300vh] bg-[#3B2A1A] font-['Inter']">
@@ -97,7 +99,7 @@ export default function HomePage() {
 
         {/* Actions - tied to text opacity */}
         <motion.div 
-          style={{ opacity: textOpacity }}
+          style={{ opacity: textOpacity, pointerEvents: actionPointerEvents as any }}
           className="absolute bottom-[20%] left-0 right-0 w-full flex flex-col sm:flex-row justify-center gap-4 z-50 px-6"
         >
           <Link
@@ -116,7 +118,7 @@ export default function HomePage() {
 
         {/* Scroll Instruction */}
         <motion.div 
-          style={{ opacity: textOpacity }}
+          style={{ opacity: scrollOpacity }}
           className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20 text-white/70 pointer-events-none"
         >
           <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-semibold bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full">

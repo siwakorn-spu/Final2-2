@@ -16,6 +16,9 @@ export default async function DashboardPage() {
     redirect("/auth/login")
   }
 
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+  const isCompany = profile?.role === "company"
+
   const { data: personas } = await supabase.from("personas").select("*").eq("user_id", user.id)
 
   return (
@@ -27,8 +30,12 @@ export default async function DashboardPage() {
             <LayoutDashboard className="h-5 w-5 text-[#A07850]" />
           </div>
           <div>
-            <h1 className="font-['Playfair_Display'] text-2xl font-bold text-[#3B2A1A]">Dashboard</h1>
-            <p className="text-sm text-[#9B8577]">Overview of your Smart Persona workspace</p>
+            <h1 className="font-['Playfair_Display'] text-2xl font-bold text-[#3B2A1A]">
+              {isCompany ? "Company Dashboard" : "Dashboard"}
+            </h1>
+            <p className="text-sm text-[#9B8577]">
+              {isCompany ? "Overview of your company workspace and job postings" : "Overview of your Smart Persona workspace"}
+            </p>
           </div>
         </div>
       </div>
@@ -37,10 +44,19 @@ export default async function DashboardPage() {
         <AdSpace placement="banner" />
       </div>
 
-      <div className="space-y-6">
-        <StatsCards personasCount={personas?.length || 0} />
-        <ActivePersonas personas={personas || []} />
-      </div>
+      {isCompany ? (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-[#E8DDD1] bg-white p-6 md:p-8 text-center shadow-sm">
+            <h2 className="font-['Playfair_Display'] text-xl font-bold text-[#3B2A1A] mb-2">Welcome to your Company Portal</h2>
+            <p className="text-[#6B4C30] mb-6">Manage your job postings, view applications, and connect with candidates.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <StatsCards personasCount={personas?.length || 0} />
+          <ActivePersonas personas={personas || []} />
+        </div>
+      )}
     </div>
   )
 }

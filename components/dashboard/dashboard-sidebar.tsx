@@ -187,7 +187,17 @@ export function DashboardSidebar({ user, profile }: DashboardSidebarProps) {
                 <span className="text-xs font-semibold">{initials}</span>
               </div>
               <div className="flex-1 overflow-hidden">
-                <p className="truncate text-sm font-medium text-[#3B2A1A]">{displayName}</p>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="truncate text-sm font-medium text-[#3B2A1A]">{displayName}</p>
+                  <span className={cn(
+                    "text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded",
+                    isCompanyRole ? "bg-indigo-100 text-indigo-700" : 
+                    profile?.role === "admin" ? "bg-red-100 text-red-700" : 
+                    "bg-[#E8DDD1] text-[#6B4C30]"
+                  )}>
+                    {profile?.role || "user"}
+                  </span>
+                </div>
                 <p className="truncate text-xs text-[#6B4C30]">{user.email}</p>
               </div>
               <ChevronRight className="h-4 w-4 flex-shrink-0 text-[#A07850]" />
@@ -198,9 +208,14 @@ export function DashboardSidebar({ user, profile }: DashboardSidebarProps) {
               <div className="flex flex-col">
                 <span className="text-sm font-medium">{displayName}</span>
                 <span className="text-xs text-muted-foreground">{user.email}</span>
-                {isCompanyRole && (
-                  <span className="text-xs font-semibold text-indigo-600 mt-0.5">Company</span>
-                )}
+                <span className={cn(
+                  "text-xs font-semibold capitalize mt-0.5",
+                  isCompanyRole ? "text-indigo-600" : 
+                  profile?.role === "admin" ? "text-red-600" : 
+                  "text-[#A07850]"
+                )}>
+                  {profile?.role || "User"}
+                </span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
