@@ -78,7 +78,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       })
       if (error) throw error
@@ -94,7 +94,6 @@ export default function LoginPage() {
     <div className="flex min-h-screen w-full bg-white">
       {/* Left Side - Visuals */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-[#0b5ed7] overflow-hidden items-center justify-center p-12">
-        {/* Abstract Blobs/Circles */}
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#0d6efd]/20 blur-3xl" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] rounded-full bg-[#3d8bfd]/20 blur-2xl" />
         <div className="absolute top-[40%] left-[20%] w-[300px] h-[300px] rounded-full bg-[#0a58ca]/40" />
