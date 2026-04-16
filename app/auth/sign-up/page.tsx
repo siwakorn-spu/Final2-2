@@ -8,63 +8,69 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
-import { Loader2, Lock, User } from "lucide-react"
+import { Loader2, Lock, User, Mail } from "lucide-react"
 
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
+import { PasswordStrength } from "@/components/ui/password-strength"
 
-const loginSchema = z.object({
+const signUpSchema = z.object({
+  fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(1, { message: "Password is required." }),
-  rememberMe: z.boolean().default(false).optional(),
+  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 })
 
-type LoginFormValues = z.infer<typeof loginSchema>
+type SignUpFormValues = z.infer<typeof signUpSchema>
 
-export default function LoginPage() {
+export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<SignUpFormValues>({
+    resolver: zodResolver(signUpSchema),
     defaultValues: {
+      fullName: "",
       email: "",
       password: "",
-      rememberMe: false,
+      confirmPassword: "",
     },
   })
 
+  // Watch password to update strength meter
+  const passwordValue = form.watch("password")
+
   const { formState: { isSubmitting, errors } } = form
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const onSubmit = async (data: SignUpFormValues) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
+        options: {
+          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
+          data: {
+            full_name: data.fullName,
+          },
+        },
       })
 
       if (error) {
-        toast.error("Sign in failed", {
+        toast.error("Sign up failed", {
           description: error.message,
         })
         return
       }
 
-      if (data.rememberMe) {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          await supabase.from("user_preferences").upsert({ user_id: user.id, remember_me: true })
-        }
-      }
-
-      toast.success("Welcome back!")
-      router.push("/dashboard")
-      router.refresh()
+      toast.success("Account created successfully! Please check your email for the verification code.")
+      router.push(`/auth/verify-otp?email=${encodeURIComponent(data.email)}`)
     } catch (error: any) {
       toast.error("An error occurred", {
         description: error.message || "Please try again later.",
@@ -72,18 +78,18 @@ export default function LoginPage() {
     }
   }
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleSignUp = async () => {
     setIsGoogleLoading(true)
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
         },
       })
       if (error) throw error
     } catch (error: any) {
-      toast.error("Google sign in failed", {
+      toast.error("Google sign up failed", {
         description: error.message,
       })
       setIsGoogleLoading(false)
@@ -100,10 +106,10 @@ export default function LoginPage() {
         <div className="absolute bottom-10 left-10 w-[200px] h-[200px] rounded-full bg-[#3d8bfd]/30" />
 
         <div className="relative z-10 text-white max-w-lg">
-          <h1 className="text-5xl font-bold tracking-tight mb-4 uppercase">Welcome</h1>
+          <h1 className="text-5xl font-bold tracking-tight mb-4 uppercase">Join Us</h1>
           <h2 className="text-2xl font-semibold mb-6 uppercase tracking-wider text-white/90">Smart Persona</h2>
           <p className="text-white/80 leading-relaxed max-w-md">
-            Log in to continue your journey. Create, manage, and refine professional identities tailored for your applications.
+            Create an account to start building and managing your professional identities tailored for your applications.
           </p>
         </div>
       </div>
@@ -111,20 +117,34 @@ export default function LoginPage() {
       {/* Right Side - Form */}
       <div className="flex w-full justify-center items-center lg:w-1/2 p-8 sm:p-12 xl:p-24 bg-[#FAFAFA]">
         <div className="w-full max-w-md mx-auto bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-          <div className="mb-8 text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign in</h2>
-            <p className="text-gray-500 text-sm">Welcome back! Please enter your details.</p>
+          <div className="mb-6 text-center">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign Up</h2>
+            <p className="text-gray-500 text-sm">Create your new account.</p>
           </div>
 
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-            {/* Email Input */}
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Full Name Input */}
             <div className="space-y-1">
               <div className="relative flex items-center">
                 <User className="absolute left-3 h-5 w-5 text-gray-400" />
                 <Input
+                  type="text"
+                  placeholder="Full Name"
+                  className="pl-10 h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-colors"
+                  {...form.register("fullName")}
+                />
+              </div>
+              {errors.fullName && <p className="text-xs text-red-500 font-medium ml-1">{errors.fullName.message}</p>}
+            </div>
+
+            {/* Email Input */}
+            <div className="space-y-1">
+              <div className="relative flex items-center">
+                <Mail className="absolute left-3 h-5 w-5 text-gray-400" />
+                <Input
                   type="email"
                   placeholder="Email Address"
-                  className="pl-10 h-12 bg-gray-50/50 border-gray-200 focus:bg-white transition-colors"
+                  className="pl-10 h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-colors"
                   {...form.register("email")}
                 />
               </div>
@@ -138,7 +158,7 @@ export default function LoginPage() {
                 <Input
                   type={showPassword ? "text" : "password"}
                   placeholder="Password"
-                  className="pl-10 pr-16 h-12 bg-gray-50/50 border-gray-200 focus:bg-white transition-colors"
+                  className="pl-10 pr-16 h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-colors"
                   {...form.register("password")}
                 />
                 <button
@@ -150,42 +170,44 @@ export default function LoginPage() {
                   {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
+              <PasswordStrength password={passwordValue} className="mt-1.5" />
               {errors.password && <p className="text-xs text-red-500 font-medium ml-1">{errors.password.message}</p>}
             </div>
 
-            {/* Options */}
-            <div className="flex items-center justify-between mt-4">
-              <div className="flex items-center space-x-2">
-                 <Checkbox 
-                  id="rememberMe" 
-                  className="border-gray-300 rounded-[4px] data-[state=checked]:bg-[#0b5ed7] data-[state=checked]:border-[#0b5ed7]"
-                  checked={form.watch("rememberMe")}
-                  onCheckedChange={(checked) => form.setValue("rememberMe", checked as boolean)}
-                 />
-                 <Label htmlFor="rememberMe" className="text-sm text-gray-600 font-normal cursor-pointer select-none">
-                   Remember me
-                 </Label>
+            {/* Confirm Password Input */}
+            <div className="space-y-1">
+               <div className="relative flex items-center">
+                <Lock className="absolute left-3 h-5 w-5 text-gray-400" />
+                <Input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm Password"
+                  className="pl-10 pr-16 h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-colors"
+                  {...form.register("confirmPassword")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 text-xs font-semibold text-[#0b5ed7] hover:text-[#0a58ca] uppercase tracking-wide"
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? "Hide" : "Show"}
+                </button>
               </div>
-              <Link
-                href="/auth/forgot-password"
-                className="text-sm font-semibold text-[#0b5ed7] hover:text-[#0a58ca] hover:underline"
-              >
-                Forgot Password?
-              </Link>
+              {errors.confirmPassword && <p className="text-xs text-red-500 font-medium ml-1">{errors.confirmPassword.message}</p>}
             </div>
 
             <Button
               type="submit"
-              className="w-full h-12 bg-[#0b5ed7] hover:bg-[#0a58ca] text-white font-medium text-base rounded-md transition-colors shadow-sm"
+              className="w-full h-11 mt-2 bg-[#0b5ed7] hover:bg-[#0a58ca] text-white font-medium text-base rounded-md transition-colors shadow-sm"
               disabled={isSubmitting || isGoogleLoading}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Signing in...
+                  Creating account...
                 </>
               ) : (
-                "Sign in"
+                "Sign up"
               )}
             </Button>
 
@@ -198,9 +220,9 @@ export default function LoginPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={handleGoogleLogin}
+              onClick={handleGoogleSignUp}
               disabled={isSubmitting || isGoogleLoading}
-              className="w-full h-12 bg-white border-gray-200 text-gray-700 hover:bg-gray-50 focus:ring-4 focus:ring-gray-100 font-medium rounded-md transition-colors"
+              className="w-full h-11 bg-white border-gray-200 text-gray-700 hover:bg-gray-50 focus:ring-4 focus:ring-gray-100 font-medium rounded-md transition-colors"
             >
               {isGoogleLoading ? (
                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -213,15 +235,21 @@ export default function LoginPage() {
                     <path fill="none" d="M0 0h48v48H0z" />
                  </svg>
               )}
-              Sign in with Google
+              Sign up with Google
             </Button>
           </form>
 
-          <div className="mt-8 text-center">
+          <div className="mt-6 text-center space-y-2">
             <p className="text-sm text-gray-500">
-              Don't have an account?{" "}
-              <Link href="/auth/sign-up" className="font-semibold text-[#0b5ed7] hover:text-[#0a58ca] hover:underline">
-                Sign Up
+              Already have an account?{" "}
+              <Link href="/auth/login" className="font-semibold text-[#0b5ed7] hover:text-[#0a58ca] hover:underline">
+                Sign In
+              </Link>
+            </p>
+            <p className="text-sm text-gray-500">
+              Are you a company?{" "}
+              <Link href="/auth/sign-up-company" className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">
+                Register as Company
               </Link>
             </p>
           </div>

@@ -49,9 +49,23 @@ export default function LoginPage() {
       })
 
       if (error) {
-        toast.error("Sign in failed", {
-          description: error.message,
-        })
+        if (
+          error.message === "Invalid login credentials" ||
+          error.message.toLowerCase().includes("invalid login credentials")
+        ) {
+          toast.error("รหัสผ่านไม่ถูกต้อง", {
+            description: "อีเมลหรือรหัสผ่านที่คุณกรอกไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง",
+          })
+          form.setError("password", {
+            type: "manual",
+            message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+          })
+          form.setValue("password", "")
+        } else {
+          toast.error("เข้าสู่ระบบไม่สำเร็จ", {
+            description: error.message,
+          })
+        }
         return
       }
 

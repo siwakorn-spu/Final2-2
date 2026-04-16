@@ -3,11 +3,11 @@ import { createClient } from "@/lib/supabase/server"
 import { requireStandardUser } from "@/lib/auth/admin"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { EmptyState } from "@/components/ui/empty-state"
 import Link from "next/link"
-import { Plus, Edit, UserCircle } from "lucide-react"
+import { Plus, Edit } from "lucide-react"
 import { ExportPersonaButton } from "@/components/personas/export-persona-button"
 import { DeletePersonaButton } from "@/components/personas/delete-persona-button"
+import { PersonasEmptyState } from "@/components/personas/personas-empty-state"
 
 const avatarColors = [
   "bg-[#A07850]",
@@ -17,20 +17,8 @@ const avatarColors = [
   "bg-[#8B6BAE]",
 ]
 
-const toneColors: Record<string, { bg: string; text: string }> = {
-  professional: { bg: "bg-blue-50", text: "text-blue-700" },
-  friendly: { bg: "bg-green-50", text: "text-green-700" },
-  enthusiastic: { bg: "bg-orange-50", text: "text-orange-700" },
-  formal: { bg: "bg-purple-50", text: "text-purple-700" },
-  casual: { bg: "bg-pink-50", text: "text-pink-700" },
-}
-
 function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
-}
-
-function getToneStyle(tone: string) {
-  return toneColors[tone?.toLowerCase()] ?? { bg: "bg-[#F5EDE2]", text: "text-[#A07850]" }
 }
 
 export default async function PersonasPage() {
@@ -81,7 +69,6 @@ export default async function PersonasPage() {
       {personas && personas.length > 0 ? (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {personas.map((persona, i) => {
-            const toneStyle = getToneStyle(persona.tone)
             const avatarBg = avatarColors[i % avatarColors.length]
             return (
               <div
@@ -113,20 +100,6 @@ export default async function PersonasPage() {
                   </div>
                 </div>
 
-                {/* Badges */}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {persona.tone && (
-                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${toneStyle.bg} ${toneStyle.text}`}>
-                      {persona.tone}
-                    </span>
-                  )}
-                  {persona.response_style && (
-                    <span className="rounded-full bg-[#F5EDE2] px-2.5 py-0.5 text-[11px] font-medium text-[#A07850]">
-                      {persona.response_style}
-                    </span>
-                  )}
-                </div>
-
                 {/* Actions */}
                 <div className="mt-4 flex items-center gap-2 border-t border-[#F0E6D8] pt-4">
                   <ExportPersonaButton
@@ -150,19 +123,7 @@ export default async function PersonasPage() {
         </div>
       ) : (
         <div className="rounded-xl border border-[#E8DDD1] bg-white p-12">
-          <EmptyState
-            icon={UserCircle}
-            title="No personas yet"
-            description="Create your first AI personality to start managing your professional presence and automating interactions across platforms."
-            action={{
-              label: "Create Your First Persona",
-              href: "/dashboard/personas/new",
-            }}
-            secondaryAction={{
-              label: "Learn More",
-              href: "/community",
-            }}
-          />
+          <PersonasEmptyState />
         </div>
       )}
     </div>
