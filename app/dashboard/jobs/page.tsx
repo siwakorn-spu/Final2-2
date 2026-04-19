@@ -24,6 +24,7 @@ export default async function JobsPage() {
     .order("created_at", { ascending: false })
 
   const { data: jobMatches } = await supabase.from("job_matches").select("*, jobs(*)").eq("user_id", user.id)
+  const { data: resumes } = await supabase.from("resumes").select("id, persona_id, updated_at").eq("user_id", user.id)
 
   return (
     <div className="p-6 md:p-8">
@@ -44,7 +45,7 @@ export default async function JobsPage() {
         <AdSpace placement="banner" />
       </div>
 
-      <JobsList jobs={jobs || []} personas={personas || []} jobMatches={jobMatches || []} userId={user.id} />
+      <JobsList jobs={jobs || []} personas={personas || []} jobMatches={jobMatches || []} resumes={resumes || []} userId={user.id} />
     </div>
   )
 }

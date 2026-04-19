@@ -8,22 +8,74 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SearchInput } from "@/components/ui/search-input"
 import { AdSpace } from "@/components/ads/ad-space"
-import { MapPin, DollarSign, Briefcase, ExternalLink, Heart, Check } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { MapPin, DollarSign, Briefcase, ExternalLink, Heart, Check, Send, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 import type { Job, Persona, JobMatch } from "@/lib/types"
+import Link from "next/link"
 
 interface JobsListProps {
   jobs: Job[]
   personas: Persona[]
   jobMatches: JobMatch[]
+  resumes: { id: string; persona_id: string }[]
   userId: string
 }
 
-export function JobsList({ jobs, personas, jobMatches, userId }: JobsListProps) {
+export function JobsList({ jobs, personas, jobMatches, resumes, userId }: JobsListProps) {
   const supabase = createClient()
   const [selectedPersona, setSelectedPersona] = useState<string>("all")
   const [filter, setFilter] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [savingJobId, setSavingJobId] = useState<string | null>(null)
+  const [applyingJobId, setApplyingJobId] = useState<string | null>(null)
+  
+  // Application Modal State
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
+  const [selectedJobToApply, setSelectedJobToApply] = useState<Job | null>(null)
+  const [selectedResumeId, setSelectedResumeId] = useState<string>("")
+  const [coverLetter, setCoverLetter] = useState("")
+
+  const handleOpenApplyModal = (job: Job) => {
+    setSelectedJobToApply(job)
+    setSelectedResumeId(resumes.length > 0 ? resumes[0].id : "")
+    setCoverLetter("")
+    setIsApplyModalOpen(true)
+  }
+
+  const handleApplySubmit = async () => {
+    if (!selectedJobToApply) return
+    if (resumes.length === 0) {
+      toast.error("You need a resume to apply.")
+      return
+    }
+    
+    setApplyingJobId(selectedJobToApply.id)
+    try {
+      const response = await fetch("/api/jobs/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobId: selectedJobToApply.id,
+          resumeId: selectedResumeId,
+          coverLetter: coverLetter,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to apply")
+      }
+
+      toast.success("Successfully applied for the job!")
+      setIsApplyModalOpen(false)
+      window.location.reload()
+    } catch (error: any) {
+      toast.error("Error applying", { description: error.message })
+    } finally {
+      setApplyingJobId(null)
+    }
+  }
 
   const calculateMatchScore = (job: Job, persona: Persona): number => {
     let score = 0
@@ -196,8 +248,8 @@ export function JobsList({ jobs, personas, jobMatches, userId }: JobsListProps) 
       {filteredJobs.length > 0 ? (
         <div className="space-y-4">
           {filteredJobs.map((job, index) => (
-            <>
-              <Card key={job.id}>
+            <div key={job.id} className="contents">
+              <Card>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -263,20 +315,31 @@ export function JobsList({ jobs, personas, jobMatches, userId }: JobsListProps) 
                     </div>
                   )}
 
-                  {job.application_url && (
-                    <Button asChild variant="outline" className="w-full bg-transparent">
-                      <a href={job.application_url} target="_blank" rel="noopener noreferrer">
-                        Apply Now
-                        <ExternalLink className="ml-2 h-4 w-4" />
-                      </a>
+                  <div className="flex flex-col gap-2">
+                    <Button 
+                      variant="default" 
+                      className="w-full bg-[#0b5ed7] hover:bg-[#0a58ca] text-white" 
+                      onClick={() => handleOpenApplyModal(job)}
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      Apply with Resume
                     </Button>
-                  )}
+                    
+                    {job.application_url && (
+                      <Button asChild variant="outline" className="w-full bg-transparent">
+                        <a href={job.application_url} target="_blank" rel="noopener noreferrer">
+                          Or Apply Externally
+                          <ExternalLink className="ml-2 h-4 w-4" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
               {(index + 1) % 3 === 0 && index !== filteredJobs.length - 1 && (
                 <AdSpace key={`ad-${index}`} placement="feed" />
               )}
-            </>
+            </div>
           ))}
         </div>
       ) : (
@@ -297,6 +360,90 @@ export function JobsList({ jobs, personas, jobMatches, userId }: JobsListProps) 
           </CardContent>
         </Card>
       )}
+
+      {/* Apply Modal */}
+      <Dialog open={isApplyModalOpen} onOpenChange={setIsApplyModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Apply for {selectedJobToApply?.title}</DialogTitle>
+            <DialogDescription>
+              Submit your resume and cover letter to apply for this position at {selectedJobToApply?.company}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            {resumes.length === 0 ? (
+              <div className="text-center space-y-4 py-8 bg-[#F5EDE2] rounded-lg">
+                <Briefcase className="h-12 w-12 text-[#A07850] mx-auto opacity-50" />
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-gray-900">No Resumes Found</h3>
+                  <p className="text-sm text-gray-500">You must create a resume before you can apply for jobs.</p>
+                </div>
+                <Button asChild className="bg-[#A07850] hover:bg-[#8A6640] text-white">
+                  <Link href="/dashboard/resumes/new">Create Resume Now</Link>
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Select Resume to Submit *
+                  </label>
+                  <Select value={selectedResumeId} onValueChange={setSelectedResumeId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a resume" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {resumes.map((resume) => {
+                        const persona = personas.find(p => p.id === resume.persona_id);
+                        return (
+                          <SelectItem key={resume.id} value={resume.id}>
+                            {persona?.name ? `${persona.name}'s Resume` : 'Untitled Resume'}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Cover Letter (Optional)
+                  </label>
+                  <textarea
+                    value={coverLetter}
+                    onChange={(e) => setCoverLetter(e.target.value)}
+                    placeholder="Introduce yourself to the hiring manager..."
+                    className="flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsApplyModalOpen(false)}>
+              Cancel
+            </Button>
+            {resumes.length > 0 && (
+              <Button 
+                onClick={handleApplySubmit} 
+                className="bg-[#0b5ed7] hover:bg-[#0a58ca] text-white"
+                disabled={!selectedResumeId || applyingJobId === selectedJobToApply?.id}
+              >
+                {applyingJobId === selectedJobToApply?.id ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Application"
+                )}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

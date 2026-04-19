@@ -10,6 +10,26 @@
   --color-border-brown: #D4B896;
 
   /* Legacy mappings for shadcn/ui compatibility */
+  --color-background: #FDFAF6;
+  --color-foreground: #3B2A1A;
+  --color-card: #F5EDE2;
+  --color-card-foreground: #3B2A1A;
+  --color-popover: #F5EDE2;
+  --color-popover-foreground: #3B2A1A;
+  --color-primary: #A07850;
+  --color-primary-foreground: #FDFAF6;
+  --color-secondary: #F5EDE2;
+  --color-secondary-foreground: #6B4C30;
+  --color-muted: #F5EDE2;
+  --color-muted-foreground: #6B4C30;
+  --color-accent: #A07850;
+  --color-accent-foreground: #FDFAF6;
+  --color-destructive: #C84B31;
+  --color-destructive-foreground: #FDFAF6;
+  --color-border: #D4B896;
+  --color-input: #D4B896;
+  --color-ring: #A07850;
+  
   --background: #FDFAF6;
   --foreground: #3B2A1A;
   --card: #F5EDE2;
