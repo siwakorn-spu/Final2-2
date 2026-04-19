@@ -25,7 +25,7 @@ export default function HomePage() {
   const scrollOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
 
   return (
-    <div ref={containerRef} className="relative w-full h-[300vh] bg-[#3B2A1A] font-['Inter']">
+    <div ref={containerRef} className="relative w-full h-[300vh] bg-[#3B2A1A] font-['DM_Sans']">
       
       {/* Sticky view that stays on screen while user scrolls the 300vh container */}
       <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-center">

@@ -60,7 +60,7 @@ export function StatsCards(props: StatsCardsProps) {
             </div>
           </div>
           <div className="mt-4">
-            <p className={`font-['Playfair_Display'] text-3xl font-bold ${stat.textColor}`}>
+            <p className={`font-['DM_Sans'] text-3xl font-bold ${stat.textColor}`}>
               {stat.value}
             </p>
             <p className="mt-1 text-sm font-medium text-[#3B2A1A]">{stat.label}</p>

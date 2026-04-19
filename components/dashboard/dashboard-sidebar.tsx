@@ -94,7 +94,7 @@ export function DashboardSidebar({ user, profile }: DashboardSidebarProps) {
             {isCompanyRole ? (
               <Building2 className="h-4 w-4 text-white" />
             ) : (
-              <span className="font-['Playfair_Display'] text-sm font-bold text-white">SP</span>
+              <span className="font-['DM Sans'] text-sm font-bold text-white">SP</span>
             )}
           </div>
           <Link href="/dashboard" className="font-['Playfair_Display'] text-lg font-bold text-[#3B2A1A]">
